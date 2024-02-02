@@ -1,67 +1,31 @@
-pub type IsMatch = bool;
+pub type IsMatching = bool; 
 
-unsafe fn index(s: &str, index: usize) -> char {
-    unsafe { *((s.as_ptr().add(index)) as *const char) }
-}
+pub type Difference = Vec<(char, IsMatching)>;
 
-pub struct Matches<'a> {
-    source: &'a str,
-    match_indexes: Vec<usize>,
-}
-
-pub struct SourceChars<'a> {
-    matches: &'a Matches<'a>,
-    indexes_iterator: std::slice::Iter<'a, usize>,
-    source_iterator: std::str::CharIndices<'a>,
-    last_index: Option<usize>,
-}
-
-impl<'a> Iterator for SourceChars<'a> {
-    type Item = (char, IsMatch);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.source_iterator.next().map(|source_char| {
-            if self.last_index == sour
-        })
-    }
-}
-
-impl<'a> Matches<'a> {
-    pub fn len(&self) -> usize {
-        self.match_indexes.len()
-    }
-
-    pub fn source_chars(&self) -> SourceChars {
-        let mut indexes_iterator = self.match_indexes.iter();
-        SourceChars {
-            last_index: indexes_iterator.next().copied(),
-            indexes_iterator,
-            matches: self,
-            source_iterator: self.source.char_indices(),
-        }
-    }
-}
-
-pub fn compare<'a, 'b>(source: &'a str, pattern: &'b str) -> Matches<'a> {
+pub fn compare(source: &str, pattern: &str) -> Difference {
     let mut pattern = pattern.chars();
     let mut pattern_char = pattern.next();
-    let mut match_indexes = Vec::new();
-    for (index, source_char) in source.char_indices() {
-        if pattern_char == Some(source_char) {
+    let mut processed = Vec::new();
+    for source_char in source.chars() {
+        processed.push((source_char, if pattern_char == Some(source_char) {
             pattern_char = pattern.next();
-            match_indexes.push(index);
-        }
+            true
+        } else {
+            false
+        }));
     }
-    Matches { match_indexes, source }
+    processed
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+pub fn best(sources: Vec<&str>, pattern: &str) -> Vec<Difference> {
+    let mut matched = Vec::new();
+    for source in sources {
+        let difference = compare(source, pattern);
+        let count = difference.iter().filter(|(_char, is_match)| *is_match).count();
+        if count > 0 {
+            matched.push((count, difference));
+        }
     }
+    matched.sort_by_key(|(count, _comparison)| std::cmp::Reverse(*count));
+    matched.into_iter().map(|(_count, difference)| difference).collect()
 }
