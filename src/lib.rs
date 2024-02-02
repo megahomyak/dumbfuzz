@@ -1,22 +1,7 @@
 pub type IsMatch = bool;
 
-pub struct MatchChars<'a> {
-    matches: &'a Matches<'a>,
-    indexes_iterator: std::slice::Iter<'a, usize>,
-}
-
 unsafe fn index(s: &str, index: usize) -> char {
     unsafe { *((s.as_ptr().add(index)) as *const char) }
-}
-
-impl<'a> Iterator for MatchChars<'a> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.indexes_iterator
-            .next()
-            .map(|index_| unsafe { index(self.matches.source, *index_) })
-    }
 }
 
 pub struct Matches<'a> {
@@ -46,13 +31,6 @@ impl<'a> Matches<'a> {
         self.match_indexes.len()
     }
 
-    pub fn chars(&self) -> MatchChars {
-        MatchChars {
-            matches: self,
-            indexes_iterator: self.match_indexes.iter(),
-        }
-    }
-
     pub fn source_chars(&self) -> SourceChars {
         let mut indexes_iterator = self.match_indexes.iter();
         SourceChars {
@@ -64,13 +42,17 @@ impl<'a> Matches<'a> {
     }
 }
 
-pub fn compare(source: &str, pattern: &str) -> Matches {
-    let matches_amount = 0;
-    let mut matches = Vec::new();
+pub fn compare<'a, 'b>(source: &'a str, pattern: &'b str) -> Matches<'a> {
     let mut pattern = pattern.chars();
-    let mut last_pattern_char = pattern.next();
-    for source_char in source.chars() {}
-    (matches_amount, matches)
+    let mut pattern_char = pattern.next();
+    let mut match_indexes = Vec::new();
+    for (index, source_char) in source.char_indices() {
+        if pattern_char == Some(source_char) {
+            pattern_char = pattern.next();
+            match_indexes.push(index);
+        }
+    }
+    Matches { match_indexes, source }
 }
 
 #[cfg(test)]
