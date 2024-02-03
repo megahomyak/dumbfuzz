@@ -17,7 +17,7 @@ pub fn compare(source: &str, pattern: &str) -> Difference {
     processed
 }
 
-pub fn best(sources: Vec<&str>, pattern: &str) -> Vec<Difference> {
+pub fn best<'a>(sources: impl Iterator<Item = &'a str>, pattern: &str) -> Vec<Difference> {
     let mut matched = Vec::new();
     for source in sources {
         let difference = compare(source, pattern);
